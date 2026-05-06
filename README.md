@@ -1,68 +1,40 @@
 # cinder-mesh-shard-pipe
 
-`cinder-mesh-shard-pipe` treats distributed systems as a local verification problem. The SQL implementation is intentionally narrow, but the fixtures and notes make the behavior explicit.
+`cinder-mesh-shard-pipe` is a compact SQL repository for distributed systems, centered on this goal: Implement an SQL distributed systems project for shard simulation kernel, using seeded input scenarios and deterministic summary checks.
 
-## Cinder Mesh Shard Pipe Checkpoints
+## Project Rationale
 
-Treat the compact fixture as the contract and the extended examples as a scratchpad. The code should stay boring enough that a change in behavior is obvious from the test output.
+I want this repository to be useful as a quick reading exercise: fixtures first, implementation second, verifier last.
 
-## Architecture Notes
+## Cinder Mesh Shard Pipe Review Notes
 
-The core is a scoring model over demand, capacity, latency, risk, and weight. That keeps node state, quorum behavior, and lease timing in one explicit decision path. The threshold is 183, with risk penalty 4, latency penalty 2, and weight bonus 2. The SQL project uses sqlite fixtures, views, and assertions to keep query behavior inspectable.
+The first comparison I would make is `lease drift` against `quorum health` because it shows where the rule is most opinionated.
 
-## What This Is For
+## Feature Set
 
-This project keeps the domain idea close to the tests. That makes it useful as a reference implementation, a small experiment, or a starting point for a more specialized tool.
+- `fixtures/domain_review.csv` adds cases for quorum health and lease drift.
+- `metadata/domain-review.json` records the same cases in structured form.
+- `config/review-profile.json` captures the read order and the two review questions.
+- `examples/cinder-mesh-shard-walkthrough.md` walks through the case spread.
+- The SQL code includes a review path for `lease drift` and `quorum health`.
+- `docs/field-notes.md` explains the strongest and weakest cases.
 
-## Useful Pieces
+## Architecture
 
-- Uses fixture data to keep quorum behavior changes visible in code review.
-- Includes extended examples for lease timing, including `surge` and `degraded`.
-- Documents message ordering tradeoffs in `docs/operations.md`.
-- Runs locally with a single verification command and no external credentials.
-- Stores project constants and verification metadata in `metadata/project.json`.
+The implementation keeps the scoring rule plain: reward signal and confidence, preserve slack, penalize drag, then classify the result into a review lane.
 
-## Case Study
+The SQL checks add a separate view over the domain review fixture.
 
-`examples/extended_cases.csv` adds six named cases. I kept the names plain so failures are easy to read in a terminal: baseline, pressure, surge, degraded, recovery, and boundary.
-
-## Project Layout
-
-- `tests`: verification harness
-- `fixtures`: compact golden scenarios
-- `examples`: expanded scenario set
-- `metadata`: project constants and verification metadata
-- `docs`: operations and extension notes
-- `scripts`: local verification and audit commands
-- `schema.sql`: sqlite schema and view definitions
-
-## Tooling
-
-Clone the repository, enter the directory, and run the verifier. No database server, cloud account, or token is required.
-
-## Local Workflow
+## Usage
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
-This runs the language-level build or test path against the compact fixture set.
+## Test Command
 
-## Quality Gate
+The same command runs the local verification path. The highest-scoring domain case is `stress` at 245, which lands in `ship`. The most cautious case is `baseline` at 133, which lands in `watch`.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit.ps1
-```
+## Next Improvements
 
-The audit command checks repository structure and README constraints before it delegates to the verifier.
-
-## Scope
-
-The scoring model is simple by design. More domain-specific behavior should be added through explicit adapters or extra fixture classes rather than hidden constants.
-
-## Expansion Ideas
-
-- Add a loader for `examples/extended_cases.csv` and promote selected cases into the language test suite.
-- Add a short report command that prints the score breakdown for a single scenario.
-- Add malformed input fixtures so the failure path is as visible as the happy path.
-- Add one more distributed systems fixture that focuses on a malformed or borderline input.
+This remains a local project with deterministic fixtures. It does not depend on credentials, hosted services, or live data. Future work should add richer malformed inputs before widening the public API.
